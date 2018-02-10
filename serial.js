@@ -7,6 +7,32 @@ const _ = require('lodash');
 
 const NUM_PIXELS = 144;
 
+var boolPixelsChanged = false;
+function setPixel( index, r, g, b ){
+	boolPixelsChanged = true;
+	sendData( `${ index }:${r}:${g}:${b},` )
+}
+
+function displayPixels(){
+	if( boolPixelsChanged ){
+		sendData(',');
+		boolPixelsChanged = false;
+	}
+}
+
+var _data = '', dataLimit = 1000;
+function sendData( data ){
+	_data += data;
+}
+
+setInterval( () => {
+	if( _data.length ){
+		var end = Math.min( _data.length, dataLimit );
+		port.write( _data.substr( 0, end ) );
+		_data = _data.substr( end );
+	}
+}, 1 )
+
 _.each( ['open','closed','error','data'], ( eventName ) => {
 	port.on( eventName, {
 		data : function( data ) {
@@ -24,15 +50,15 @@ _.each( ['open','closed','error','data'], ( eventName ) => {
 				setInterval( function(){
 					index = ( (index + 1) % (NUM_PIXELS - startIndex) );
 	
-					_.each( _.times( 10 ), i => {
+					_.each( _.times( 5 ), i => {
 						var color = 40;
-						port.write( `${( startIndex + index + i + 1) % NUM_PIXELS}:${color}:${color}:${color},` );
+						setPixel( ( startIndex + index + i + 1) % NUM_PIXELS, color, color, color );
 					} );
-					port.write( `${(startIndex + index) % NUM_PIXELS}:0:0:0,` );
-					
-					port.write( `,` );
+					setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
+					setPixel( (startIndex + index + 1) % NUM_PIXELS, 0, 0, 0 );
+					displayPixels();
 	
-				}, 2 );
+				}, 1 );
 			}, 2000 )
 		}
 	}[ eventName ] || function(){
