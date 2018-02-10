@@ -8,7 +8,6 @@ function DataStream( options ){
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
 util.inherits( DataStream, EventEmitter );
-console.log('inherited');
 
 DataStream.prototype.push = function( data ){
 	if( typeof data == 'string' ){
