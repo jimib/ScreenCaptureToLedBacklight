@@ -1,0 +1,20 @@
+{
+  "name": "leds",
+  "version": "1.0.0",
+  "main": "app.js",
+  "license": "MIT",
+  "dependencies": {
+    "ffmpeg": "^0.0.4",
+    "get-pixels": "^3.3.0",
+    "lodash": "^4.17.4",
+    "node-vibrant": "^3.0.0",
+    "nodemon": "^1.14.12",
+    "png-streamer": "^0.0.1",
+    "serialport": "^6.0.5"
+  },
+  "scripts": {
+    "serial": "node serial",
+    "serial:watch": "nodemon serial.js --watch",
+    "list-ports": "serialport-list -f jsonline"
+  }
+}
