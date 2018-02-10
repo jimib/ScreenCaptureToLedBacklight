@@ -7,31 +7,68 @@ const _ = require('lodash');
 
 const NUM_PIXELS = 144;
 
-var boolPixelsChanged = false;
-function setPixel( index, r, g, b ){
-	boolPixelsChanged = true;
-	sendData( `${ index }:${r}:${g}:${b},` )
+
+function Leds( numPixels, options ){
+	//map
+	this._leds = _.map( _.times( numPixels ), index => {
+		return [0,0,0];
+	} );
+
+	this.leds = _.map( _.times( numPixels ), index => {
+		return [0,0,0];
+	} );
 }
 
-function displayPixels(){
-	if( boolPixelsChanged ){
+Leds.prototype.getPixel = function( index ){
+	return this.leds[index];
+}
+
+Leds.prototype.setPixel = function( index, r, g, b ){
+	var led = this.leds[index];
+	led[0] = r;
+	led[1] = g;
+	led[2] = b;
+}
+
+Leds.prototype.show = function(){
+	var changed = false;
+	_.each( this.leds, ( led, index ) => {
+		var iled = this._leds[index];
+		var changes = _.map( _.times(3), i => {
+			return iled[i] != led[i] ? led[i] : null;
+		} );
+
+		if( _.filter( changes, value => value != null ).length > 0 ){
+			//send the data
+			sendData( `${ index }:${ led[0] }:${ led[1] }:${ led[2] },` );
+			//reset the reference
+			_.each( _.times(3), i => {
+				return iled[i] = led[i];
+			} );
+			//make note
+			changed = true;
+		}
+	} )
+
+	if( changed ){
 		sendData(',');
-		boolPixelsChanged = false;
 	}
 }
 
-var _data = '', dataLimit = 1000;
+const LEDS = new Leds( NUM_PIXELS );
+
+var _data = '', dataLimit = 5000;
 function sendData( data ){
 	_data += data;
 }
 
 setInterval( () => {
-	if( _data.length ){
+	if( _data.length > 0 ){
 		var end = Math.min( _data.length, dataLimit );
 		port.write( _data.substr( 0, end ) );
 		_data = _data.substr( end );
 	}
-}, 1 )
+}, 10 );
 
 _.each( ['open','closed','error','data'], ( eventName ) => {
 	port.on( eventName, {
@@ -45,20 +82,26 @@ _.each( ['open','closed','error','data'], ( eventName ) => {
 		open : function(){
 			console.log('open');
 			var startIndex = 0;
-			var index = 50;
+			var index = 0;
+			var phase = 0;
+			var lum = 40;
 			setTimeout( function(){
 				setInterval( function(){
 					index = ( (index + 1) % (NUM_PIXELS - startIndex) );
-	
-					_.each( _.times( 5 ), i => {
+					phase += 0.05;
+					_.each( _.times( 100 ), i => {
 						var color = 40;
-						setPixel( ( startIndex + index + i + 1) % NUM_PIXELS, color, color, color );
+						var p = i * 0.1;
+						LEDS.setPixel( (index + i) % NUM_PIXELS, 
+							Math.round( lum * 0.5 * (1 + Math.cos( phase + p )) ), 
+							Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 2 )) ), 
+							Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 4 )) )
+						);
 					} );
-					setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
-					setPixel( (startIndex + index + 1) % NUM_PIXELS, 0, 0, 0 );
-					displayPixels();
+					LEDS.setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
+					LEDS.show();
 	
-				}, 1 );
+				}, 10 );
 			}, 2000 )
 		}
 	}[ eventName ] || function(){
