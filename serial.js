@@ -1,11 +1,13 @@
-const DataStream = require('./libs/datastream');
 
+const DataStream = require('./libs/datastream');
 const SerialPort = require('serialport');
-const port = new SerialPort('/dev/tty.usbmodem14331', { autoOpen: true, baudRate:115200 });
-const stream = new DataStream({sep:'\n'});
 const _ = require('lodash');
 
 const NUM_PIXELS = 144;
+const BAUD_RATE = 57600;
+
+const stream = new DataStream({sep:'\n'});
+const port = new SerialPort('/dev/tty.usbmodem1411', { autoOpen: true, baudRate:BAUD_RATE });
 
 
 function Leds( numPixels, options ){
@@ -25,6 +27,7 @@ Leds.prototype.getPixel = function( index ){
 
 Leds.prototype.setPixel = function( index, r, g, b ){
 	var led = this.leds[index];
+	
 	led[0] = r;
 	led[1] = g;
 	led[2] = b;
@@ -57,11 +60,13 @@ Leds.prototype.show = function(){
 
 const LEDS = new Leds( NUM_PIXELS );
 
-var _data = '', dataLimit = 5000;
+var _data = '', dataLimit = BAUD_RATE;
 function sendData( data ){
+	//console.log('sendData', data.length);
 	_data += data;
 }
 
+var count = 0;
 setInterval( () => {
 	if( _data.length > 0 ){
 		var end = Math.min( _data.length, dataLimit );
@@ -89,7 +94,8 @@ _.each( ['open','closed','error','data'], ( eventName ) => {
 				setInterval( function(){
 					index = ( (index + 1) % (NUM_PIXELS - startIndex) );
 					phase += 0.05;
-					_.each( _.times( 100 ), i => {
+					//console.log('phase', phase);
+					_.each( _.times( 20 ), i => {
 						var color = 40;
 						var p = i * 0.1;
 						LEDS.setPixel( (index + i) % NUM_PIXELS, 
@@ -101,7 +107,7 @@ _.each( ['open','closed','error','data'], ( eventName ) => {
 					LEDS.setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
 					LEDS.show();
 	
-				}, 10 );
+				}, 2 );
 			}, 2000 )
 		}
 	}[ eventName ] || function(){

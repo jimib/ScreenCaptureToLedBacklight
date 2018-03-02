@@ -25,7 +25,7 @@ CRGB leds[NUM_LEDS];
 
 // This function sets up the ledsand tells the controller about them
 void setup() {
-  Serial.begin( 115200 );
+  Serial.begin( 57600 );
   // sanity check delay - allows reprogramming if accidently blowing power w/leds
   delay(2000);
 
