@@ -9,6 +9,29 @@ const BAUD_RATE = 57600;
 const stream = new DataStream({sep:'\n'});
 const port = new SerialPort('/dev/tty.usbmodem1411', { autoOpen: true, baudRate:BAUD_RATE });
 
+function runAnimation(){
+	var startIndex = 0;
+	var index = 0;
+	var phase = 0;
+	var lum = 40;
+	setInterval( function(){
+		index = ( (index + 1) % (NUM_PIXELS - startIndex) );
+		phase += 0.05;
+		//console.log('phase', phase);
+		_.each( _.times( 20 ), i => {
+			var color = 40;
+			var p = i * 0.1;
+			LEDS.setPixel( (index + i) % NUM_PIXELS, 
+				Math.round( lum * 0.5 * (1 + Math.cos( phase + p )) ), 
+				Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 2 )) ), 
+				Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 4 )) )
+			);
+		} );
+		LEDS.setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
+		LEDS.show();
+	}, 2 );
+}
+
 
 function Leds( numPixels, options ){
 	//map
@@ -85,30 +108,9 @@ _.each( ['open','closed','error','data'], ( eventName ) => {
 			//do nothing - it will be closed and reopened
 		},
 		open : function(){
-			console.log('open');
-			var startIndex = 0;
-			var index = 0;
-			var phase = 0;
-			var lum = 40;
 			setTimeout( function(){
-				setInterval( function(){
-					index = ( (index + 1) % (NUM_PIXELS - startIndex) );
-					phase += 0.05;
-					//console.log('phase', phase);
-					_.each( _.times( 20 ), i => {
-						var color = 40;
-						var p = i * 0.1;
-						LEDS.setPixel( (index + i) % NUM_PIXELS, 
-							Math.round( lum * 0.5 * (1 + Math.cos( phase + p )) ), 
-							Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 2 )) ), 
-							Math.round( lum * 0.5 * (1 + Math.cos( phase + p + 4 )) )
-						);
-					} );
-					LEDS.setPixel( (startIndex + index) % NUM_PIXELS, 0, 0, 0 );
-					LEDS.show();
-	
-				}, 2 );
-			}, 2000 )
+				runAnimation();
+			}, 2000 );
 		}
 	}[ eventName ] || function(){
 		console.log(`${eventName}`);
@@ -124,3 +126,4 @@ setInterval( () => {
 		port.open();
 	}
 }, 1000 )
+
